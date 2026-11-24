@@ -1,0 +1,2 @@
+{"loss_permille":"20","batches":[{"id":"batch-red","nominal_volume":"120"},{"id":"batch-blue","nominal_volume":"80"}],"meters":[{"id":"origin","position_km":"0","cumulative_volume":"200"},{"id":"valve-17","position_km":"40","cumulative_volume":"198"},{"id":"terminal","position_km":"90","cumulative_volume":"190"}]}
+
