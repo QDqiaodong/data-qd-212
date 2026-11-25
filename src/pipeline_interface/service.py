@@ -82,3 +82,13 @@ def process(data: dict) -> dict:
             interfaces.append({"upstream_batch": bid, "downstream_batch": sequence[index + 1][0], "delivered_position": _text(cursor)})
     return {"segments": segments, "batches": delivered, "interfaces": interfaces, "terminal_volume": _text(readings[-1][2])}
 
+
+def __getattr__(name: str):
+    # Preserve service.py as the accounting module while also allowing
+    # ``from pipeline_interface.service import qualify``.
+    if name == "qualify":
+        from .qualification import qualify
+
+        return qualify
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+

@@ -1,0 +1,64 @@
+{
+  "loss_permille": "20",
+  "batches": [
+    {"id": "batch-red", "nominal_volume": "120"},
+    {"id": "batch-blue", "nominal_volume": "80"}
+  ],
+  "meters": [
+    {"id": "origin", "position_km": "0", "cumulative_volume": "200"},
+    {"id": "valve-17", "position_km": "40", "cumulative_volume": "198"},
+    {"id": "terminal", "position_km": "90", "cumulative_volume": "190"}
+  ],
+  "specs": [
+    {
+      "batch_id": "batch-red",
+      "min_component": "0.40",
+      "max_component": "0.60",
+      "max_gap": "60"
+    },
+    {
+      "batch_id": "batch-blue",
+      "min_component": "0.40",
+      "max_component": "0.60",
+      "max_gap": "30"
+    }
+  ],
+  "samples": [
+    {
+      "sample_id": "red-inlet",
+      "position": "0",
+      "component": "0.45",
+      "uncertainty": "0.05"
+    },
+    {
+      "sample_id": "red-middle",
+      "position": "60",
+      "component": "0.50",
+      "uncertainty": "0.05"
+    },
+    {
+      "sample_id": "interface-120",
+      "position": "120.00",
+      "component": "0.50",
+      "uncertainty": "0"
+    },
+    {
+      "sample_id": "blue-middle",
+      "position": "150",
+      "component": "0.50",
+      "uncertainty": "0"
+    },
+    {
+      "sample_id": "blue-terminal",
+      "position": "190",
+      "component": "0.50",
+      "uncertainty": "0"
+    }
+  ],
+  "withdrawals": [
+    {"withdrawal_id": "lift-1", "batch_id": "batch-red", "volume": "120"},
+    {"withdrawal_id": "lift-2", "batch_id": "batch-blue", "volume": "20"},
+    {"withdrawal_id": "lift-3-too-large", "batch_id": "batch-blue", "volume": "20"},
+    {"withdrawal_id": "lift-4-small", "batch_id": "batch-blue", "volume": "5"}
+  ]
+}
