@@ -23,6 +23,16 @@ Python 3.11+；运行仅标准库，构建固定 setuptools 80.9.0、wheel 0.45.
 
 原有核算样例起点 200 体积单位，终端 190；红批次完整交付 120，蓝批次交付 70、短量 10。
 
+## 活动批次承诺与废液台账
+
+`pipeline_interface.plan_campaign(data)` 在每日窗口前离线选择可承诺的新批次：按优先级计数向量、总冲洗体积、完成分钟总和与批次 ID 序列依次决胜，并用子集动态规划处理 1 至 18 个候选批次。它会保留不可撤销的 `committed_inflows` 和固定 `drains`，按“排放 → 既有入罐合计 → 本次转换入罐”的分钟顺序生成完整 `waste_ledger`。基线超容量返回 `baseline_conflict`；基线合规但候选计划无法满足时间/环保容量时返回 `new_plan_infeasible`。它不控制泵阀，也不修改既有承诺、提货记录、`process` 或 `qualify`。
+
+完整字段与语义见 `docs/contract.md` 的 “Offline campaign planning API”。示例：
+
+```bash
+PYTHONPATH=src python examples/run_campaign_sample.py
+```
+
 ## 边界
 
 本版不推断界面混合宽度、温压密度折算或中途支线收发。所有读数由调用方先统一单位，异常数据整批拒绝，不输出部分核算。质量判定只使用标准库分数运算，不用浮点数决定边界或状态；它不控制设备，也不是库存或通用报表系统。

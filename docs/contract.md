@@ -75,3 +75,80 @@ Run the offline example with:
 ```bash
 python examples/run_qualify_sample.py
 ```
+
+## Offline campaign planning API
+
+`plan_campaign(data) -> dict` plans at most one occurrence of each candidate batch and returns the executable schedule together with the complete waste ledger. It does not mutate `data`, control equipment, or alter `process` / `qualify`.
+
+All volumes are parsed as exact `fractions.Fraction` values. Internally the planner also uses one common power-of-ten integer scale for capacity and flush totals, so no binary floating-point value decides a boundary.
+
+### Input contract
+
+- `flow_rate`: positive decimal string.
+- `horizon_minutes`: positive integer.
+- `batches`: 1..18 objects with unique nonempty string `id`, positive decimal string `volume`, integer `release_minute` / `deadline_minute`, and integer `priority` in `1..5`. Times satisfy `0 <= release_minute < deadline_minute <= horizon_minutes`.
+- `transitions`: directed unique `(from,to)` edges. `from` is `START` or an existing batch ID; `to` is an existing batch ID. `START` cannot be a target, self-edges are invalid, and a missing edge forbids that direct adjacency. Each edge has nonnegative decimal string `flush_volume` and nonnegative integer `flush_minutes`.
+- Environmental fields: nonnegative exact `initial_waste`, positive exact `waste_capacity`, 0..18 `drains`, and 0..18 `committed_inflows`. Integral Python values are accepted for environmental amounts because they are exact; floats are rejected.
+- A drain has unique integer `minute` in `0..horizon_minutes` and positive `amount`.
+- A committed inflow has globally unique nonempty `event_id`, valid minute, positive `amount`, and nonempty `source_ref`.
+
+Structural, identity, reference, decimal, priority or time-window errors raise `ValueError` for the whole call. Baseline overflow and candidate-plan infeasibility are normal returned states.
+
+### Exact minutes and waiting
+
+For batch volume `V` and flow rate `R`, duration is `ceil(V/R)` minutes. A transition duration is `flush_minutes + ceil(flush_volume/R)`. The `START -> first batch` transition is timed like every other transition.
+
+For a fixed sequence, the planner uses the earliest feasible times. Waiting occurs before starting a transition and may be required by:
+
+1. the target batch release minute;
+2. waste capacity at the transition end minute.
+
+The transition end must leave enough time for the target batch to complete at or before its deadline and the horizon. The search checks the earliest lower bound and later drain minutes; inflows only increase waste, so they cannot create capacity. It never searches every permutation or every minute of a large horizon.
+
+### Waste ledger semantics
+
+The ledger starts with an `entry_type="initial_waste"` balance row. If `initial_waste > waste_capacity`, the result is `environment_status="baseline_conflict"` and the first conflict is recorded before minute-zero processing. A minute-zero drain cannot retroactively repair that initial state.
+
+At each minute, rows are produced in this mandatory order:
+
+1. fixed drain, removing `min(amount, current_balance)`;
+2. all committed inflows, displayed in `event_id` order for equal minutes, with their total used for the capacity decision;
+3. the selected campaign transition flush, if one ends at that minute.
+
+A baseline conflict returns an empty campaign plan while retaining every fixed drain/inflow and the complete fixed ledger. The conflict code is either `initial_waste_over_capacity` or `committed_inflows_over_capacity`. If the baseline is compliant but no candidate sequence can accommodate its new flushes, the result is `status="new_plan_infeasible"` with `environment_status="compliant"`.
+
+### Optimization
+
+Feasible subset/order/start-time plans are compared lexicographically by:
+
+1. planned-count vector `(priority_1_count, ..., priority_5_count)`, maximizing component 1 first;
+2. total flush volume, minimizing;
+3. sum of scheduled batch completion minutes, minimizing;
+4. batch ID sequence, lexicographically smallest.
+
+Thus no lower-priority batch can displace a retainable higher-priority batch.
+
+The implementation uses subset dynamic programming over `(mask,last_batch)` with a small Pareto frontier for time, objective prefix and waste state. This avoids both factorial permutation enumeration and unbounded minute-by-minute waiting searches.
+
+### Result shape
+
+The stable high-level keys are:
+
+- `environment_status`: `"compliant"` or `"baseline_conflict"`;
+- `status`: `"feasible"`, `"new_plan_infeasible"` or `"baseline_conflict"`;
+- `plan_status`: `"optimal"`, `"new_plan_infeasible"` or `"baseline_conflict"`;
+- `sequence` / `selected_batch_ids`: selected IDs in execution order;
+- `plan` / `new_plan` (also aliased as `campaign`, `campaign_plan` and `schedule`) is a list of executable scheduled batch rows. For compatibility it also exposes mapping-style metadata such as `sequence`, `batches`, `transitions`, `priority_counts`, `total_flush_volume` and `total_completion_minutes`; `plan_detail` is the same metadata as a plain dictionary;
+- `batches` / `candidates`: every candidate sorted by ID. Selected rows have `status="scheduled"` and start/completion fields plus an embedded `preceding_transition`; unselected rows have `status="not_selected"`;
+- `waste_ledger` / `ledger`: initial row plus ordered drain, committed-inflow and selected-transition-flush rows;
+- `drains` and `committed_inflows`: canonical fixed events;
+- `first_conflict` / `conflict`: first baseline conflict or `null`;
+- `baseline`: baseline status, capacity and initial balance.
+
+Volume strings are exact finite decimals. Minute and duration fields are JSON integers. Input array order does not affect canonical scheduling or ledger output.
+
+Run the offline example with:
+
+```bash
+python examples/run_campaign_sample.py
+```

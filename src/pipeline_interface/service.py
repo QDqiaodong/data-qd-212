@@ -85,10 +85,14 @@ def process(data: dict) -> dict:
 
 def __getattr__(name: str):
     # Preserve service.py as the accounting module while also allowing
-    # ``from pipeline_interface.service import qualify``.
+    # ``from pipeline_interface.service import qualify`` and plan_campaign.
     if name == "qualify":
         from .qualification import qualify
 
         return qualify
+    if name == "plan_campaign":
+        from .campaign import plan_campaign
+
+        return plan_campaign
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

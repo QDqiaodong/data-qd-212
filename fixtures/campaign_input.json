@@ -1,0 +1,63 @@
+{
+  "flow_rate": "10",
+  "horizon_minutes": 45,
+  "batches": [
+    {
+      "id": "A",
+      "volume": "20",
+      "release_minute": 0,
+      "deadline_minute": 25,
+      "priority": 1
+    },
+    {
+      "id": "B",
+      "volume": "30",
+      "release_minute": 5,
+      "deadline_minute": 40,
+      "priority": 2
+    },
+    {
+      "id": "C",
+      "volume": "10",
+      "release_minute": 0,
+      "deadline_minute": 18,
+      "priority": 3
+    }
+  ],
+  "transitions": [
+    {
+      "from": "START",
+      "to": "A",
+      "flush_volume": "5",
+      "flush_minutes": 1
+    },
+    {
+      "from": "A",
+      "to": "B",
+      "flush_volume": "8",
+      "flush_minutes": 1
+    },
+    {
+      "from": "START",
+      "to": "C",
+      "flush_volume": "2",
+      "flush_minutes": 0
+    }
+  ],
+  "initial_waste": "10",
+  "waste_capacity": "120",
+  "drains": [
+    {
+      "minute": 12,
+      "amount": "30"
+    }
+  ],
+  "committed_inflows": [
+    {
+      "event_id": "tank-001",
+      "minute": 10,
+      "amount": "15",
+      "source_ref": "day-ahead-nomination"
+    }
+  ]
+}
